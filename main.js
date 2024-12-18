@@ -14,10 +14,12 @@ const {
   stopGravity,
   toggleGravity,
 } = require("./gravity.js");
+const { createDuplicateWindow } = require("./duplicate.js");
 
 let tray = null;
 let mainWindow;
 let settingsWindow = null;
+let duplicateWindows = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -39,7 +41,9 @@ function createWindow() {
   mainWindow.setIgnoreMouseEvents(false);
 
   mainWindow.on("blur", () => {
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+    if (!duplicateWindows.some((win) => win.isFocused())) {
+      mainWindow.setIgnoreMouseEvents(true, { forward: true });
+    }
   });
 
   mainWindow.on("focus", () => {
@@ -80,10 +84,11 @@ function createTray() {
 
   const contextMenu = Menu.buildFromTemplate([
     { label: "Settings", click: () => openSettingsWindow() },
-    { label: "Flip Pet", click: () => flipPet() },
+    { label: "Flip Pet", click: () => flipAllPets() },
+    { label: "Duplicate Pet", click: () => duplicatePet() },
     { label: "Toggle Gravity", click: () => toggleGravity() },
-    { label: "Show Pet", click: () => mainWindow.show() },
-    { label: "Hide Pet", click: () => mainWindow.hide() },
+    { label: "Show All Pets", click: () => showAllPets() },
+    { label: "Hide All Pets", click: () => hideAllPets() },
     { type: "separator" },
     { label: "Quit", role: "quit" },
   ]);
@@ -92,10 +97,35 @@ function createTray() {
   tray.setContextMenu(contextMenu);
 }
 
-function flipPet() {
-  if (mainWindow) {
-    mainWindow.webContents.send("flip-pet");
-  }
+function flipAllPets() {
+  [mainWindow, ...duplicateWindows].forEach((win) => {
+    if (win) win.webContents.send("flip-pet");
+  });
+}
+
+function duplicatePet() {
+  const newWindow = createDuplicateWindow();
+  duplicateWindows.push(newWindow);
+
+  newWindow.on("focus", () => {
+    newWindow.setIgnoreMouseEvents(false);
+  });
+
+  newWindow.on("blur", () => {
+    newWindow.setIgnoreMouseEvents(true, { forward: true });
+  });
+
+  newWindow.on("closed", () => {
+    duplicateWindows = duplicateWindows.filter((win) => win !== newWindow);
+  });
+}
+
+function showAllPets() {
+  [mainWindow, ...duplicateWindows].forEach((win) => win && win.show());
+}
+
+function hideAllPets() {
+  [mainWindow, ...duplicateWindows].forEach((win) => win && win.hide());
 }
 
 ipcMain.on("mouse-enter", () => {
@@ -113,10 +143,12 @@ ipcMain.on("mouse-leave", () => {
 });
 
 ipcMain.on("update-gif", (event, gifUrl) => {
-  if (mainWindow) {
-    mainWindow.webContents.send("update-gif", gifUrl);
-    console.log(`GIF updated to: ${gifUrl}`);
-  }
+  [mainWindow, ...duplicateWindows].forEach((win) => {
+    if (win) {
+      win.webContents.send("update-gif", gifUrl);
+    }
+  });
+  console.log(`GIF updated to: ${gifUrl}`);
 });
 
 app.whenReady().then(() => {
