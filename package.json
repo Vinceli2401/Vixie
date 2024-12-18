@@ -2,6 +2,9 @@
   "name": "vixie",
   "version": "1.0.0",
   "main": "main.js",
+  "description": "Your desktop pet Vixie, powered by Electron!",
+  "author": "Vince Li",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "electron-forge start",
     "test": "echo \"Error: no test specified\" && exit 1",
