@@ -8,14 +8,16 @@ const {
   screen,
 } = require("electron");
 const path = require("path");
+const {
+  startMouseCheck,
+  startGravity,
+  stopGravity,
+  toggleGravity,
+} = require("./gravity.js");
 
 let tray = null;
 let mainWindow;
 let settingsWindow = null;
-let gravityEnabled = false; // Toggle state
-let gravityInterval = null;
-let mouseCheckInterval = null;
-let isMouseInside = false; // Mouse state
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -33,7 +35,7 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
-  startMouseCheck();
+  startMouseCheck(mainWindow, screen);
   mainWindow.setIgnoreMouseEvents(false);
 
   mainWindow.on("blur", () => {
@@ -96,64 +98,6 @@ function flipPet() {
   }
 }
 
-function toggleGravity() {
-  gravityEnabled = !gravityEnabled;
-
-  if (gravityEnabled && !isMouseInside) {
-    startGravity();
-  } else {
-    stopGravity();
-  }
-}
-
-function startMouseCheck() {
-  mouseCheckInterval = setInterval(() => {
-    const cursorPos = screen.getCursorScreenPoint();
-    const windowBounds = mainWindow.getBounds();
-
-    const isInside =
-      cursorPos.x >= windowBounds.x &&
-      cursorPos.x <= windowBounds.x + windowBounds.width &&
-      cursorPos.y >= windowBounds.y &&
-      cursorPos.y <= windowBounds.y + windowBounds.height;
-
-    if (isInside && !isMouseInside) {
-      console.log("Mouse entered the window.");
-      isMouseInside = true;
-      stopGravity();
-    } else if (!isInside && isMouseInside) {
-      console.log("Mouse left the window.");
-      isMouseInside = false;
-
-      if (gravityEnabled) {
-        startGravity();
-      }
-    }
-  }, 100); // Check every 100ms
-}
-
-function startGravity() {
-  if (gravityInterval || !gravityEnabled || isMouseInside) return;
-
-  gravityInterval = setInterval(() => {
-    const bounds = mainWindow.getBounds();
-    const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
-
-    if (bounds.y + bounds.height < screenHeight) {
-      bounds.y += 8; // Smooth descent
-      mainWindow.setBounds(bounds);
-    }
-  }, 16); // 60 FPS
-}
-
-function stopGravity() {
-  if (gravityInterval) {
-    clearInterval(gravityInterval);
-    gravityInterval = null;
-    console.log("Gravity stopped.");
-  }
-}
-
 ipcMain.on("mouse-enter", () => {
   if (!isMouseInside) {
     isMouseInside = true;
@@ -164,7 +108,7 @@ ipcMain.on("mouse-enter", () => {
 ipcMain.on("mouse-leave", () => {
   if (isMouseInside) {
     isMouseInside = false;
-    if (gravityEnabled) startGravity();
+    if (gravityEnabled) startGravity(mainWindow, screen);
   }
 });
 
