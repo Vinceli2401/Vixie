@@ -11,12 +11,12 @@ const path = require("path");
 
 let tray = null;
 let mainWindow;
-let gravityEnabled = false;
+let settingsWindow = null;
+let gravityEnabled = false; // Toggle state
 let gravityInterval = null;
 let mouseCheckInterval = null;
-let isMouseInside = false;
+let isMouseInside = false; // Mouse state
 
-// Main Window: Vixie
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 200,
@@ -47,7 +47,6 @@ function createWindow() {
   mainWindow.on("closed", () => stopGravity());
 }
 
-// Settings Window
 function openSettingsWindow() {
   if (settingsWindow) {
     settingsWindow.focus();
@@ -69,7 +68,6 @@ function openSettingsWindow() {
   settingsWindow.on("closed", () => (settingsWindow = null));
 }
 
-// Tray and Menu
 function createTray() {
   const iconPath = path.join(__dirname, "assets", "app-icon.png");
   const icon = nativeImage
@@ -92,22 +90,18 @@ function createTray() {
   tray.setContextMenu(contextMenu);
 }
 
-// Flip Pet Logic
 function flipPet() {
   if (mainWindow) {
     mainWindow.webContents.send("flip-pet");
   }
 }
 
-// Gravity Logic
 function toggleGravity() {
   gravityEnabled = !gravityEnabled;
 
-  if (gravityEnabled) {
-    mouseTrackingEnabled = true;
-    if (!isMouseInside) startGravity();
+  if (gravityEnabled && !isMouseInside) {
+    startGravity();
   } else {
-    mouseTrackingEnabled = false;
     stopGravity();
   }
 }
@@ -124,21 +118,22 @@ function startMouseCheck() {
       cursorPos.y <= windowBounds.y + windowBounds.height;
 
     if (isInside && !isMouseInside) {
-      console.log("Mouse entered the window (main process).");
+      console.log("Mouse entered the window.");
       isMouseInside = true;
-      mainWindow.setIgnoreMouseEvents(false); // Enable mouse interaction
       stopGravity();
     } else if (!isInside && isMouseInside) {
-      console.log("Mouse left the window (main process).");
+      console.log("Mouse left the window.");
       isMouseInside = false;
-      mainWindow.setIgnoreMouseEvents(true, { forward: true }); // Disable mouse interaction
-      startGravity();
+
+      if (gravityEnabled) {
+        startGravity();
+      }
     }
   }, 100); // Check every 100ms
 }
 
 function startGravity() {
-  if (gravityInterval) return;
+  if (gravityInterval || !gravityEnabled || isMouseInside) return;
 
   gravityInterval = setInterval(() => {
     const bounds = mainWindow.getBounds();
@@ -169,7 +164,7 @@ ipcMain.on("mouse-enter", () => {
 ipcMain.on("mouse-leave", () => {
   if (isMouseInside) {
     isMouseInside = false;
-    if (gravityEnabled && mouseTrackingEnabled) startGravity();
+    if (gravityEnabled) startGravity();
   }
 });
 
