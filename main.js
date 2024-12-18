@@ -1,29 +1,66 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage } = require("electron");
 const path = require("path");
 
-const width = 200;
-const height = 200;
+let tray = null; // Declare tray globally
+let mainWindow;
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width,
-    height,
+  mainWindow = new BrowserWindow({
+    width: 200,
+    height: 200,
     transparent: true,
-    frame: false, // Removes the default OS frame
+    frame: false,
     alwaysOnTop: true,
-    resizable: false, // Prevent resizing
+    resizable: false,
     hasShadow: false,
-    icon: path.join(__dirname, "assets/app-icon.ico"),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  win.loadFile(path.join(__dirname, "index.html"));
-
-  // Ensure the window allows interaction and dragging
-  win.setIgnoreMouseEvents(false);
+  mainWindow.loadFile(path.join(__dirname, "index.html"));
 }
 
-app.whenReady().then(createWindow);
+function createTray() {
+  const iconPath = path.join(__dirname, "assets/app-icon.png");
+  const icon = nativeImage
+    .createFromPath(iconPath)
+    .resize({ width: 16, height: 16 });
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: "Settings", click: () => openSettingsWindow() },
+    { label: "Show Pet", click: () => mainWindow.show() },
+    { label: "Hide Pet", click: () => mainWindow.hide() },
+    { type: "separator" },
+    { label: "Quit", role: "quit" },
+  ]);
+
+  tray.setToolTip("Vixie - Your Desktop Pet");
+  tray.setContextMenu(contextMenu);
+}
+
+function openSettingsWindow() {
+  const settingsWindow = new BrowserWindow({
+    width: 300,
+    height: 200,
+    title: "Settings",
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+  settingsWindow.loadFile(path.join(__dirname, "settings.html"));
+}
+
+app.whenReady().then(() => {
+  createWindow();
+  createTray();
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
