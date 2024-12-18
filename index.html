@@ -9,14 +9,34 @@
       background: transparent;
       overflow: hidden;
     }
+
+    /* Image - Draggable Area */
     img {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 100%;
       height: auto;
+      object-fit: contain;
+      -webkit-app-region: drag; /* Allow dragging */
+    }
+
+    /* Resizing Handle */
+    .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      background: transparent;
+      cursor: nwse-resize; /* Diagonal resize cursor */
+      -webkit-app-region: no-drag; /* Exclude from dragging to allow resizing */
     }
   </style>
 </head>
 <body>
-  <img src="assets/celebi.gif" alt="Error">
+  <img src="assets/celebi.gif" alt="Vixie">
+  <div class="resize-handle"></div>
 </body>
 </html>
