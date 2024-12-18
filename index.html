@@ -6,40 +6,44 @@
   <style>
     body {
       margin: 0;
-      width: 200px;
-      height: 200px;
+      width: 100vw;
+      height: 100vh;
       overflow: hidden;
       background-color: transparent;
-      -webkit-app-region: drag; /* Make the entire window draggable */
       display: flex;
       align-items: center;
       justify-content: center;
+      -webkit-app-region: drag; /* Enable dragging for the entire window */
     }
+
     img {
-      width: 100%;
-      height: 100%;
+      width: 120px; /* Adjust the size of the sprite */
+      height: auto; /* Maintain aspect ratio */
       object-fit: contain;
       image-rendering: pixelated;
-      pointer-events: none; /* Prevent the image itself from blocking drag */
+      pointer-events: none; /* Prevent blocking drag events */
+      transition: transform 0.2s ease-in-out; /* Smooth flip animation */
     }
   </style>
 </head>
 <body>
-  <img id="pet" src="https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif" alt="Vixie" draggable="false">
+  <img id="pet" src="https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif" alt="Vixie">
 
   <script>
     const { ipcRenderer } = require("electron");
     const pet = document.getElementById("pet");
 
+    // Handle GIF updates
     ipcRenderer.on("set-gif", (event, gifUrl) => {
-      pet.src = gifUrl; // Update the pet GIF dynamically
+      pet.src = gifUrl;
     });
 
+    // Handle Flip Logic
     ipcRenderer.on("flip-pet", () => {
       const currentTransform = pet.style.transform;
       pet.style.transform = currentTransform.includes("scaleX(-1)")
-        ? "scaleX(1)" // Reset if already flipped
-        : "scaleX(-1)"; // Flip horizontally
+        ? "scaleX(1)" // Reset flip
+        : "scaleX(-1)"; // Apply flip
     });
   </script>
 </body>
