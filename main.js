@@ -4,15 +4,14 @@ const {
   Tray,
   Menu,
   nativeImage,
-  ipcMain,
   screen,
 } = require("electron");
 const path = require("path");
 const {
   startMouseCheck,
-  startGravity,
   stopGravity,
   toggleGravity,
+  cleanUp,
 } = require("./gravity.js");
 
 let tray = null;
@@ -36,7 +35,6 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
   startMouseCheck(mainWindow, screen);
-  mainWindow.setIgnoreMouseEvents(false);
 
   mainWindow.on("blur", () => {
     mainWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -46,7 +44,7 @@ function createWindow() {
     mainWindow.setIgnoreMouseEvents(false);
   });
 
-  mainWindow.on("closed", () => stopGravity());
+  mainWindow.on("close", () => cleanUp());
 }
 
 function openSettingsWindow() {
@@ -70,6 +68,12 @@ function openSettingsWindow() {
   settingsWindow.on("closed", () => (settingsWindow = null));
 }
 
+function flipPet() {
+  if (mainWindow) {
+    mainWindow.webContents.send("flip-pet");
+  }
+}
+
 function createTray() {
   const iconPath = path.join(__dirname, "assets", "app-icon.png");
   const icon = nativeImage
@@ -81,7 +85,7 @@ function createTray() {
   const contextMenu = Menu.buildFromTemplate([
     { label: "Settings", click: () => openSettingsWindow() },
     { label: "Flip Pet", click: () => flipPet() },
-    { label: "Toggle Gravity", click: () => toggleGravity() },
+    { label: "Toggle Gravity", click: () => toggleGravity(mainWindow, screen) },
     { label: "Show Pet", click: () => mainWindow.show() },
     { label: "Hide Pet", click: () => mainWindow.hide() },
     { type: "separator" },
@@ -92,39 +96,15 @@ function createTray() {
   tray.setContextMenu(contextMenu);
 }
 
-function flipPet() {
-  if (mainWindow) {
-    mainWindow.webContents.send("flip-pet");
-  }
-}
-
-ipcMain.on("mouse-enter", () => {
-  if (!isMouseInside) {
-    isMouseInside = true;
-    stopGravity();
-  }
-});
-
-ipcMain.on("mouse-leave", () => {
-  if (isMouseInside) {
-    isMouseInside = false;
-    if (gravityEnabled) startGravity(mainWindow, screen);
-  }
-});
-
-ipcMain.on("update-gif", (event, gifUrl) => {
-  if (mainWindow) {
-    mainWindow.webContents.send("update-gif", gifUrl);
-    console.log(`GIF updated to: ${gifUrl}`);
-  }
-});
-
 app.whenReady().then(() => {
   createWindow();
   createTray();
 });
 
-app.on("before-quit", () => stopGravity());
+app.on("before-quit", () => {
+  cleanUp(); // Ensure all intervals are cleaned
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
