@@ -15,17 +15,32 @@
       align-items: center;
       justify-content: center;
     }
-
     img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       image-rendering: pixelated;
+      pointer-events: none; /* Prevent the image itself from blocking drag */
     }
   </style>
 </head>
 <body>
-  <!-- <img src="assets/celebi.gif" alt="Vixie" draggable="false"> -->
-  <img src="https://play.pokemonshowdown.com/sprites/ani/breloom.gif" alt="Vixie" draggable="false">
+  <img id="pet" src="https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif" alt="Vixie" draggable="false">
+
+  <script>
+    const { ipcRenderer } = require("electron");
+    const pet = document.getElementById("pet");
+
+    ipcRenderer.on("set-gif", (event, gifUrl) => {
+      pet.src = gifUrl; // Update the pet GIF dynamically
+    });
+
+    ipcRenderer.on("flip-pet", () => {
+      const currentTransform = pet.style.transform;
+      pet.style.transform = currentTransform.includes("scaleX(-1)")
+        ? "scaleX(1)" // Reset if already flipped
+        : "scaleX(-1)"; // Flip horizontally
+    });
+  </script>
 </body>
 </html>
