@@ -1,37 +1,28 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-const sizeOf = require("image-size");
-const imagePath = path.join(__dirname, "assets/celebi.gif");
-const { width, height } = sizeOf(imagePath);
+
+const width = 200;
+const height = 200;
 
 function createWindow() {
-  const aspectRatio = width / height;
-
   const win = new BrowserWindow({
     width,
     height,
     transparent: true,
-    frame: false,
+    frame: false, // Removes the default OS frame
     alwaysOnTop: true,
-    resizable: true,
-    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    resizable: false, // Prevent resizing
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
   });
 
-  win.on("will-resize", (event, newBounds) => {
-    const { width, height } = newBounds;
-    const newHeight = Math.round(width / aspectRatio);
-    const newWidth = Math.round(height * aspectRatio);
+  win.loadFile(path.join(__dirname, "index.html"));
 
-    if (width / height > aspectRatio) {
-      event.preventDefault();
-      win.setBounds({ width: newWidth, height });
-    } else {
-      event.preventDefault();
-      win.setBounds({ width, height: newHeight });
-    }
-  });
-
-  win.loadFile("index.html");
+  // Ensure the window allows interaction and dragging
+  win.setIgnoreMouseEvents(false);
 }
 
 app.whenReady().then(createWindow);

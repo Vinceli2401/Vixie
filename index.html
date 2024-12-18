@@ -6,37 +6,25 @@
   <style>
     body {
       margin: 0;
-      background: transparent;
+      width: 200px;
+      height: 200px;
       overflow: hidden;
+      background-color: transparent;
+      -webkit-app-region: drag; /* Make the entire window draggable */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Image - Draggable Area */
     img {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       width: 100%;
-      height: auto;
+      height: 100%;
       object-fit: contain;
-      -webkit-app-region: drag; /* Allow dragging */
-    }
-
-    /* Resizing Handle */
-    .resize-handle {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 20px;
-      height: 20px;
-      background: transparent;
-      cursor: nwse-resize; /* Diagonal resize cursor */
-      -webkit-app-region: no-drag; /* Exclude from dragging to allow resizing */
+      image-rendering: pixelated;
     }
   </style>
 </head>
 <body>
-  <img src="assets/celebi.gif" alt="Vixie">
-  <div class="resize-handle"></div>
+  <img src="assets/celebi.gif" alt="Vixie" draggable="false">
 </body>
 </html>
