@@ -13,16 +13,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      -webkit-app-region: drag; /* Enable dragging for the entire window */
+      -webkit-app-region: drag; 
     }
 
     img {
-      width: 120px; /* Adjust the size of the sprite */
-      height: auto; /* Maintain aspect ratio */
+      width: 120px;
+      height: auto;
       object-fit: contain;
-      image-rendering: pixelated;
-      pointer-events: none; /* Prevent blocking drag events */
-      transition: transform 0.2s ease-in-out; /* Smooth flip animation */
+      transition: transform 0.2s ease-in-out;
     }
   </style>
 </head>
@@ -30,20 +28,25 @@
   <img id="pet" src="https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif" alt="Vixie">
 
   <script>
-    const { ipcRenderer } = require("electron");
+    const { ipcRenderer, remote } = require("electron");
     const pet = document.getElementById("pet");
 
-    // Handle GIF updates
-    ipcRenderer.on("set-gif", (event, gifUrl) => {
-      pet.src = gifUrl;
+    window.addEventListener("mousemove", (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      if (mouseX < 0 || mouseX > window.innerWidth || mouseY < 0 || mouseY > window.innerHeight) {
+        ipcRenderer.send("mouse-leave");
+      } else {
+        ipcRenderer.send("mouse-enter");
+      }
     });
 
-    // Handle Flip Logic
     ipcRenderer.on("flip-pet", () => {
       const currentTransform = pet.style.transform;
       pet.style.transform = currentTransform.includes("scaleX(-1)")
-        ? "scaleX(1)" // Reset flip
-        : "scaleX(-1)"; // Apply flip
+        ? "scaleX(1)"
+        : "scaleX(-1)";
     });
   </script>
 </body>

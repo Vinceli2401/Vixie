@@ -11,9 +11,10 @@ const path = require("path");
 
 let tray = null;
 let mainWindow;
-let settingsWindow;
 let gravityEnabled = false;
 let gravityInterval = null;
+let mouseCheckInterval = null;
+let isMouseInside = false;
 
 // Main Window: Vixie
 function createWindow() {
@@ -32,6 +33,18 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
+  startMouseCheck();
+  mainWindow.setIgnoreMouseEvents(false);
+
+  mainWindow.on("blur", () => {
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+  });
+
+  mainWindow.on("focus", () => {
+    mainWindow.setIgnoreMouseEvents(false);
+  });
+
+  mainWindow.on("closed", () => stopGravity());
 }
 
 // Settings Window
@@ -53,10 +66,7 @@ function openSettingsWindow() {
   });
 
   settingsWindow.loadFile(path.join(__dirname, "settings.html"));
-
-  settingsWindow.on("closed", () => {
-    settingsWindow = null;
-  });
+  settingsWindow.on("closed", () => (settingsWindow = null));
 }
 
 // Tray and Menu
@@ -94,37 +104,72 @@ function toggleGravity() {
   gravityEnabled = !gravityEnabled;
 
   if (gravityEnabled) {
-    startGravity();
+    mouseTrackingEnabled = true;
+    if (!isMouseInside) startGravity();
   } else {
+    mouseTrackingEnabled = false;
     stopGravity();
   }
 }
 
+function startMouseCheck() {
+  mouseCheckInterval = setInterval(() => {
+    const cursorPos = screen.getCursorScreenPoint();
+    const windowBounds = mainWindow.getBounds();
+
+    const isInside =
+      cursorPos.x >= windowBounds.x &&
+      cursorPos.x <= windowBounds.x + windowBounds.width &&
+      cursorPos.y >= windowBounds.y &&
+      cursorPos.y <= windowBounds.y + windowBounds.height;
+
+    if (isInside && !isMouseInside) {
+      console.log("Mouse entered the window (main process).");
+      isMouseInside = true;
+      mainWindow.setIgnoreMouseEvents(false); // Enable mouse interaction
+      stopGravity();
+    } else if (!isInside && isMouseInside) {
+      console.log("Mouse left the window (main process).");
+      isMouseInside = false;
+      mainWindow.setIgnoreMouseEvents(true, { forward: true }); // Disable mouse interaction
+      startGravity();
+    }
+  }, 100); // Check every 100ms
+}
+
 function startGravity() {
-  const bounds = mainWindow.getBounds();
-  const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
+  if (gravityInterval) return;
 
   gravityInterval = setInterval(() => {
+    const bounds = mainWindow.getBounds();
+    const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
+
     if (bounds.y + bounds.height < screenHeight) {
-      bounds.y += 10;
+      bounds.y += 8; // Smooth descent
       mainWindow.setBounds(bounds);
-    } else {
-      stopGravity();
     }
-  }, 50);
+  }, 16); // 60 FPS
 }
 
 function stopGravity() {
   if (gravityInterval) {
     clearInterval(gravityInterval);
     gravityInterval = null;
+    console.log("Gravity stopped.");
   }
 }
 
-// IPC for GIF Updates
-ipcMain.on("update-gif", (event, gifUrl) => {
-  if (mainWindow) {
-    mainWindow.webContents.send("set-gif", gifUrl);
+ipcMain.on("mouse-enter", () => {
+  if (!isMouseInside) {
+    isMouseInside = true;
+    stopGravity();
+  }
+});
+
+ipcMain.on("mouse-leave", () => {
+  if (isMouseInside) {
+    isMouseInside = false;
+    if (gravityEnabled && mouseTrackingEnabled) startGravity();
   }
 });
 
@@ -133,6 +178,7 @@ app.whenReady().then(() => {
   createTray();
 });
 
+app.on("before-quit", () => stopGravity());
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
