@@ -21,6 +21,7 @@
       height: auto;
       object-fit: contain;
       transition: transform 0.2s ease-in-out;
+      -webkit-app-region: drag; 
     }
   </style>
 </head>
@@ -47,6 +48,10 @@
       pet.style.transform = currentTransform.includes("scaleX(-1)")
         ? "scaleX(1)"
         : "scaleX(-1)";
+    });
+
+    ipcRenderer.on("update-gif", (event, gifUrl) => {
+      pet.src = gifUrl;
     });
   </script>
 </body>

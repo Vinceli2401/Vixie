@@ -112,6 +112,13 @@ ipcMain.on("mouse-leave", () => {
   }
 });
 
+ipcMain.on("update-gif", (event, gifUrl) => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-gif", gifUrl);
+    console.log(`GIF updated to: ${gifUrl}`);
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();
