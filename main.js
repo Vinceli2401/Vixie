@@ -5,6 +5,7 @@ const {
   Menu,
   nativeImage,
   screen,
+  ipcMain,
 } = require("electron");
 const path = require("path");
 const {
@@ -65,6 +66,12 @@ function openSettingsWindow() {
   });
 
   settingsWindow.loadFile(path.join(__dirname, "settings.html"));
+
+  // Send updated GIF URL back to main window
+  settingsWindow.webContents.on("did-finish-load", () => {
+    settingsWindow.webContents.send("get-current-gif", {});
+  });
+
   settingsWindow.on("closed", () => (settingsWindow = null));
 }
 
@@ -107,4 +114,13 @@ app.on("before-quit", () => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+/**
+ * IPC Logic to change GIF
+ */
+ipcMain.on("update-gif", (event, newGifUrl) => {
+  if (mainWindow) {
+    mainWindow.webContents.send("update-gif", newGifUrl);
+  }
 });
