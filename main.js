@@ -13,6 +13,7 @@ function createWindow() {
     alwaysOnTop: true,
     resizable: false, // Prevent resizing
     hasShadow: false,
+    icon: path.join(__dirname, "assets/app-icon.ico"),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
