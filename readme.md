@@ -1,3 +1,5 @@
+### Description:
+
 This is a small desktop pet program that takes an url from pokemonshowdown.com as the input. It mainly serves as a demo written in electron.js.
 
 ### License:
