@@ -1,6 +1,6 @@
 This is a small desktop pet program that takes an url from pokemonshowdown.com as the input. It mainly serves as a demo written in electron.js.
 
-License:
+### License:
 
 This project is licensed under the MIT License.
 
@@ -15,5 +15,3 @@ You are free to:
     Include it in proprietary software.
 
 For more details, please refer to the MIT License. Attributions is recommended.
-
-Have fun OvO
