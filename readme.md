@@ -1,17 +1,21 @@
-## License
+License
 
-This project is licensed under the [GNU Affero General Public License v3](https://www.gnu.org/licenses/agpl-3.0.html).
+This project is licensed under the MIT License.
 
 You are free to:
 
-- Use this software.
-- Modify this software.
-- Distribute this software.
+    Use this software for any purpose.
 
-### Conditions
+    Modify this software.
 
-- **Source Code Sharing**: If you modify this software and distribute it (including deploying it as a service), you must share your modifications under the same AGPL v3 license.
-- **Attribution**: You must credit the original author (Vince Li).
+    Distribute this software.
 
-For more details, refer to the [AGPL v3 license](https://www.gnu.org/licenses/agpl-3.0.html).
+    Include it in proprietary software.
+
+Conditions
+
+    Attribution: You must include the original copyright notice and this permission notice in any copies or substantial portions of the software.
+
+For more details, refer to the MIT License.
+
 Have fun ^^
