@@ -29,8 +29,9 @@ function createWindow() {
     resizable: false,
     hasShadow: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
@@ -45,7 +46,10 @@ function createWindow() {
     mainWindow.setIgnoreMouseEvents(false);
   });
 
-  mainWindow.on("close", () => cleanUp());
+  mainWindow.on("close", () => {
+    cleanUp();
+    mainWindow = null;
+  });
 }
 
 function openSettingsWindow() {
@@ -60,23 +64,41 @@ function openSettingsWindow() {
     title: "Settings",
     resizable: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
   settingsWindow.loadFile(path.join(__dirname, "settings.html"));
 
   // Send updated GIF URL back to main window
-  settingsWindow.webContents.on("did-finish-load", () => {
-    settingsWindow.webContents.send("get-current-gif", {});
+  settingsWindow.webContents.once("did-finish-load", () => {
+    if (mainWindow && !mainWindow.isDestroyed() && settingsWindow && !settingsWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript('document.getElementById("pet").src')
+        .then(src => {
+          if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.webContents.send("set-current-gif", src);
+          }
+        })
+        .catch(() => {
+          if (settingsWindow && !settingsWindow.isDestroyed()) {
+            settingsWindow.webContents.send("set-current-gif", "https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif");
+          }
+        });
+    }
   });
 
-  settingsWindow.on("closed", () => (settingsWindow = null));
+  settingsWindow.on("closed", () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.removeAllListeners();
+    }
+    settingsWindow = null;
+  });
 }
 
 function flipPet() {
-  if (mainWindow) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("flip-pet");
   }
 }
@@ -93,8 +115,8 @@ function createTray() {
     { label: "Settings", click: () => openSettingsWindow() },
     { label: "Flip Pet", click: () => flipPet() },
     { label: "Toggle Gravity", click: () => toggleGravity(mainWindow, screen) },
-    { label: "Show Pet", click: () => mainWindow.show() },
-    { label: "Hide Pet", click: () => mainWindow.hide() },
+    { label: "Show Pet", click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show(); } },
+    { label: "Hide Pet", click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide(); } },
     { type: "separator" },
     { label: "Quit", role: "quit" },
   ]);
@@ -120,7 +142,19 @@ app.on("window-all-closed", () => {
  * IPC Logic to change GIF
  */
 ipcMain.on("update-gif", (event, newGifUrl) => {
-  if (mainWindow) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("update-gif", newGifUrl);
+  }
+});
+
+
+ipcMain.on("mouse-enter", () => {
+  stopGravity();
+});
+
+ipcMain.on("mouse-leave", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const { startGravity } = require("./gravity.js");
+    startGravity(mainWindow, screen);
   }
 });

@@ -14,7 +14,7 @@
       align-items: center;
       justify-content: center;
       image-rendering: pixelated;
-      -webkit-app-region: drag; 
+      -webkit-app-region: drag;
     }
 
     img {
@@ -22,7 +22,7 @@
       height: auto;
       object-fit: contain;
       transition: transform 0.2s ease-in-out;
-      -webkit-app-region: drag; 
+      -webkit-app-region: drag;
     }
   </style>
 </head>
@@ -30,29 +30,43 @@
   <img id="pet" src="https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif" alt="Vixie">
 
   <script>
-    const { ipcRenderer, remote } = require("electron");
     const pet = document.getElementById("pet");
+    let isMouseInside = false;
 
-    window.addEventListener("mousemove", (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
+    pet.addEventListener('error', () => {
+      pet.src = 'assets/celebi.gif';
+    });
 
-      if (mouseX < 0 || mouseX > window.innerWidth || mouseY < 0 || mouseY > window.innerHeight) {
-        ipcRenderer.send("mouse-leave");
-      } else {
-        ipcRenderer.send("mouse-enter");
+    window.addEventListener("mouseenter", () => {
+      if (!isMouseInside) {
+        isMouseInside = true;
+        window.electronAPI.mouseEnter();
       }
     });
 
-    ipcRenderer.on("flip-pet", () => {
+    window.addEventListener("mouseleave", () => {
+      if (isMouseInside) {
+        isMouseInside = false;
+        window.electronAPI.mouseLeave();
+      }
+    });
+
+    window.electronAPI.onFlipPet(() => {
       const currentTransform = pet.style.transform;
       pet.style.transform = currentTransform.includes("scaleX(-1)")
         ? "scaleX(1)"
         : "scaleX(-1)";
     });
 
-    ipcRenderer.on("update-gif", (event, gifUrl) => {
-      pet.src = gifUrl;
+    window.electronAPI.onUpdateGif((event, gifUrl) => {
+      if (gifUrl && gifUrl.trim()) {
+        pet.src = gifUrl;
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      window.electronAPI.removeAllListeners('flip-pet');
+      window.electronAPI.removeAllListeners('update-gif');
     });
   </script>
 </body>

@@ -66,11 +66,53 @@
   </div>
 
   <script>
-    const { ipcRenderer } = require("electron");
+    function isValidUrl(string) {
+      try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function isImageUrl(url) {
+      return /\.(gif|jpe?g|png|webp)$/i.test(url);
+    }
+
+    window.electronAPI.onSetCurrentGif((event, currentGif) => {
+      document.getElementById("gif-url").value = currentGif || '';
+    });
 
     document.getElementById("save-btn").addEventListener("click", () => {
-      const gifUrl = document.getElementById("gif-url").value;
-      ipcRenderer.send("update-gif", gifUrl);
+      const gifUrl = document.getElementById("gif-url").value.trim();
+      
+      if (!gifUrl) {
+        alert('Please enter a URL');
+        return;
+      }
+      
+      if (!isValidUrl(gifUrl)) {
+        alert('Please enter a valid URL (must start with http:// or https://)');
+        return;
+      }
+      
+      if (!isImageUrl(gifUrl)) {
+        alert('Please enter a valid image URL (.gif, .jpg, .jpeg, .png, .webp)');
+        return;
+      }
+      
+      window.electronAPI.updateGif(gifUrl);
+      window.close();
+    });
+
+    document.getElementById("gif-url").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("save-btn").click();
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      window.electronAPI.removeAllListeners('set-current-gif');
     });
   </script>
 </body>

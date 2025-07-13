@@ -37,33 +37,37 @@ function startMouseCheck(mainWindow, screen) {
 }
 
 function startGravity(mainWindow, screen) {
-  if (gravityInterval || !gravityEnabled || isMouseInside) return;
+  if (gravityInterval || !gravityEnabled || isMouseInside || !mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
 
-  // console.log("Starting gravity...");
+  stopGravity();
+  
   gravityInterval = setInterval(() => {
     if (!mainWindow || mainWindow.isDestroyed()) {
       stopGravity();
       return;
     }
 
-    const bounds = mainWindow.getBounds();
-    const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
+    try {
+      const bounds = mainWindow.getBounds();
+      const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
 
-    // Move the window down
-    if (bounds.y + bounds.height < screenHeight) {
-      bounds.y += 8; // Smooth descent
-      mainWindow.setBounds({
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-      });
-      // console.log(`Window position updated: y = ${bounds.y}`);
-    } else {
-      // console.log("Window reached bottom. Stopping gravity...");
+      if (bounds.y + bounds.height < screenHeight) {
+        bounds.y += 8;
+        mainWindow.setBounds({
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        });
+      } else {
+        stopGravity();
+      }
+    } catch (error) {
       stopGravity();
     }
-  }, 16); // 60 FPS
+  }, 16);
 }
 
 function stopGravity() {
@@ -97,7 +101,8 @@ function toggleGravity(mainWindow, screen) {
 function cleanUp() {
   stopMouseCheck();
   stopGravity();
-  // console.log("All timers cleaned up.");
+  gravityEnabled = false;
+  isMouseInside = false;
 }
 
 module.exports = {
