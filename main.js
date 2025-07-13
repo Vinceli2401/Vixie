@@ -31,7 +31,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
     },
   });
 
@@ -66,7 +66,7 @@ function openSettingsWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
     },
   });
 
@@ -74,16 +74,25 @@ function openSettingsWindow() {
 
   // Send updated GIF URL back to main window
   settingsWindow.webContents.once("did-finish-load", () => {
-    if (mainWindow && !mainWindow.isDestroyed() && settingsWindow && !settingsWindow.isDestroyed()) {
-      mainWindow.webContents.executeJavaScript('document.getElementById("pet").src')
-        .then(src => {
+    if (
+      mainWindow &&
+      !mainWindow.isDestroyed() &&
+      settingsWindow &&
+      !settingsWindow.isDestroyed()
+    ) {
+      mainWindow.webContents
+        .executeJavaScript('document.getElementById("pet").src')
+        .then((src) => {
           if (settingsWindow && !settingsWindow.isDestroyed()) {
             settingsWindow.webContents.send("set-current-gif", src);
           }
         })
         .catch(() => {
           if (settingsWindow && !settingsWindow.isDestroyed()) {
-            settingsWindow.webContents.send("set-current-gif", "https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif");
+            settingsWindow.webContents.send(
+              "set-current-gif",
+              "https://play.pokemonshowdown.com/sprites/ani-shiny/victini.gif"
+            );
           }
         });
     }
@@ -115,8 +124,18 @@ function createTray() {
     { label: "Settings", click: () => openSettingsWindow() },
     { label: "Flip Pet", click: () => flipPet() },
     { label: "Toggle Gravity", click: () => toggleGravity(mainWindow, screen) },
-    { label: "Show Pet", click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show(); } },
-    { label: "Hide Pet", click: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide(); } },
+    {
+      label: "Show Pet",
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
+      },
+    },
+    {
+      label: "Hide Pet",
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide();
+      },
+    },
     { type: "separator" },
     { label: "Quit", role: "quit" },
   ]);
@@ -146,7 +165,6 @@ ipcMain.on("update-gif", (event, newGifUrl) => {
     mainWindow.webContents.send("update-gif", newGifUrl);
   }
 });
-
 
 ipcMain.on("mouse-enter", () => {
   stopGravity();
